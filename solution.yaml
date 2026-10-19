@@ -1,0 +1,10 @@
+apiVersion: solution.sap/v1
+kind: Solution
+
+metadata:
+  name: hello-world-agent-88379
+  version: 1.0.0
+  description: A minimal AI agent that responds "hello world" to any message, used to validate the SAP BTP agent deployment pipeline.
+
+assets:
+  - ref: ./assets/hello-world-agent/asset.yaml
