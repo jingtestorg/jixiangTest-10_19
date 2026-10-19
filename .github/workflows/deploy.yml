@@ -1,14 +1,17 @@
 # Deploy to Joule Studio
 # Trigger manually from GitHub UI: Actions > Deploy to Joule Studio > Run workflow
 #
+# When triggered from a tag:  downloads the source ZIP for the tag and deploys it (no build).
+# When triggered from a branch: builds from source code, then deploys.
+#
 # Required organization secrets (Settings > Secrets and variables > Actions > Secrets):
-#   SCI_TENANT_URL     - Issuer URI of the SAP Cloud Identity Services tenant
-#   SCI_CLIENT_ID      - Client ID of the SCI application
-#   JOULE_STUDIO_URL   - Base URL of the Joule Studio solution handling API
-#   SCI_CLIENT_SECRET  - Client secret of the SCI application
+#   SCI_TENANT_URL   - Issuer URI of the SAP Cloud Identity Services tenant
+#   SCI_CLIENT_ID    - Client ID of the SCI application
+#   JOULE_STUDIO_URL - Base URL of the Joule Studio solution handling API
+#   SCI_CLIENT_SECRET - Client secret of the SCI application
 #
 # Optional variables (Settings > Secrets and variables > Actions > Variables):
-#   TARGET_SYSTEMS     - JSON object mapping system type to system ID for multi-system landscapes.
+#   TARGET_SYSTEMS   - JSON object mapping system type to system ID for multi-system landscapes
 #
 # Setup:
 #   1. This file is pushed automatically by Joule Studio when you push your solution
@@ -42,7 +45,16 @@ jobs:
           sciClientId: ${{ secrets.SCI_CLIENT_ID }}
           sciClientSecret: ${{ secrets.SCI_CLIENT_SECRET }}
 
+      - name: Download tag ZIP
+        if: startsWith(github.ref, 'refs/tags/')
+        id: download-tag-zip
+        uses: ./.github/actions/download-tag-zip
+        with:
+          tag: ${{ github.ref_name }}
+          repository: ${{ github.repository }}
+
       - name: Build solution
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: ./.github/actions/build
 
       - name: Deploy solution
@@ -50,4 +62,5 @@ jobs:
         with:
           sciToken: ${{ steps.fetch-token.outputs.sciToken }}
           jouleStudioUrl: ${{ secrets.JOULE_STUDIO_URL }}
+          path: ${{ startsWith(github.ref, 'refs/tags/') && steps.download-tag-zip.outputs.path || github.workspace }}
           targetSystems: ${{ vars.TARGET_SYSTEMS }}

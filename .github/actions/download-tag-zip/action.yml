@@ -1,0 +1,34 @@
+name: Download Tag ZIP
+description: Downloads and extracts the source ZIP for a git tag from the GitHub API.
+
+inputs:
+  tag:
+    description: The git tag name to download
+    required: true
+  repository:
+    description: The owner/repo string (e.g., myorg/myrepo)
+    required: true
+
+outputs:
+  path:
+    description: Path to the extracted solution directory
+    value: ${{ steps.download.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download and extract tag ZIP
+      id: download
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ inputs.tag }}
+        REPO: ${{ inputs.repository }}
+      run: |
+        gh api "repos/${REPO}/zipball/${TAG}" > /tmp/tag-source.zip
+        echo "Downloaded source ZIP for tag ${TAG}"
+
+        mkdir -p /tmp/tag-content
+        unzip -q /tmp/tag-source.zip -d /tmp/tag-content
+        TOP_DIR=$(ls /tmp/tag-content)
+        echo "path=/tmp/tag-content/$TOP_DIR" >> "$GITHUB_OUTPUT"
